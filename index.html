@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GU Runner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(to top, #c0f0ff, #ffffff);
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+    canvas {
+      background: #f2f2f2;
+      display: block;
+      margin: 30px auto;
+      border: 3px solid #222;
+      border-radius: 10px;
+    }
+    h1 {
+      margin-top: 20px;
+      font-size: 32px;
+      color: #333;
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 18px;
+      margin-top: 10px;
+      background: #007acc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>GU Runner</h1>
+<button onclick="startGame()">Start</button>
+<canvas id="gameCanvas" width="900" height="300"></canvas>
+
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  let gameSpeed = 5;
+  let gravity = 1;
+  let man, poopList, isGameOver, score;
+
+  const manImg = new Image();
+  manImg.src = "https://i.imgur.com/YtUoUCb.png"; // stickman placeholder
+
+  const poopImg = new Image();
+  poopImg.src = "https://i.imgur.com/O4uFi3v.png"; // poop icon
+
+  function startGame() {
+    man = {
+      x: 50,
+      y: 250,
+      width: 40,
+      height: 50,
+      velocityY: 0,
+      isJumping: false
+    };
+    poopList = [];
+    isGameOver = false;
+    score = 0;
+    gameSpeed = 5;
+    requestAnimationFrame(updateGame);
+  }
+
+  function drawMan() {
+    ctx.drawImage(manImg, man.x, man.y, man.width, man.height);
+  }
+
+  function drawPoop(poop) {
+    ctx.drawImage(poopImg, poop.x, poop.y, poop.width, poop.height);
+  }
+
+  function spawnPoop() {
+    const poop = {
+      x: canvas.width,
+      y: 270,
+      width: 30,
+      height: 30
+    };
+    poopList.push(poop);
+  }
+
+  function updateGame() {
+    if (isGameOver) {
+      showGameOver();
+      return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Ground
+    ctx.fillStyle = "#aaa";
+    ctx.fillRect(0, 300 - 20, canvas.width, 20);
+
+    // Update man
+    if (man.isJumping) {
+      man.velocityY += gravity;
+      man.y += man.velocityY;
+
+      if (man.y >= 250) {
+        man.y = 250;
+        man.isJumping = false;
+        man.velocityY = 0;
+      }
+    }
+
+    drawMan();
+
+    // Update poop
+    poopList.forEach((poop, index) => {
+      poop.x -= gameSpeed;
+      drawPoop(poop);
+
+      // Collision check
+      if (
+        man.x < poop.x + poop.width &&
+        man.x + man.width > poop.x &&
+        man.y < poop.y + poop.height &&
+        man.y + man.height > poop.y
+      ) {
+        isGameOver = true;
+      }
+
+      if (poop.x + poop.width < 0) {
+        poopList.splice(index, 1);
+        score++;
+        if (score % 5 === 0) gameSpeed += 0.5; // Increase difficulty
+      }
+    });
+
+    // Score
+    ctx.fillStyle = "#333";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Score: " + score, 20, 30);
+
+    // Spawn poop randomly
+    if (Math.random() < 0.02) spawnPoop();
+
+    requestAnimationFrame(updateGame);
+  }
+
+  function showGameOver() {
+    ctx.fillStyle = "red";
+    ctx.font = "30px sans-serif";
+    ctx.fillText("Chiiiiiiiiiiiiiii!!!!!!!!!!!!!!!!!!!!", 150, 150);
+    ctx.fillStyle = "#333";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Score: " + score, 400, 180);
+    ctx.fillText("Press 'Start' to try again", 330, 210);
+  }
+
+  // Jump control
+  document.addEventListener("keydown", (e) => {
+    if ((e.code === "Space" || e.code === "ArrowUp") && !man.isJumping && !isGameOver) {
+      man.velocityY = -15;
+      man.isJumping = true;
+    }
+  });
+</script>
+
+</body>
+</html>
